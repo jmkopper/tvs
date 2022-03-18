@@ -1,8 +1,12 @@
-#import numpy as np
-import heapq
-
 NNODES = 4
 SCALE_FACTOR = 1.25
+
+"""
+NNODES is the number of nodes in the graph
+SCALE_FACTOR is the amount by which the algorithm will allow itself to miss the target distance. A value of 1.x
+corresponds to x%. For example, if SCALE_FACTOR = 1.5 and target distance is 10, the algorithm will find routes
+with distance between 5 and 15 (inclusive.)
+"""
 
 adj = [[0, 6, 3.2, 0], [6, 0, 2.5, 2.5], [3.2, 2.5, 0, 2.2], [0, 2.5, 2.2, 0]]
 
@@ -23,36 +27,13 @@ def getPathLength(p):
     return d
 
 
-def Dijkstra(start):
-    dist = []
-    prev = []
-    for i in range(NNODES):
-        dist.append(float('inf'))
-        prev.append(None)
-    dist[start] = 0
-    heap = [(d, n) for n, d in enumerate(dist)]
-    heapq.heapify(heap)
-
-    while heap:
-        u = heapq.heappop(heap)[1]
-        heap_vals = [z for y, z in heap]  # Can't figure out a better way to do this
-
-        for v in getNeighbors(u):
-            if v in heap_vals:
-                alt = dist[u] + adj[u][v]
-                if alt < dist[v]:
-                    dist[v] = alt
-                    prev[v] = u
-
-    return dist  # , prev
-
-
+# Main algorithm: Target Value Search D(FS)
 def TVSD(n, end, target: int, cur_path: list = [], cur_dist: float = 0):
     if not cur_path:
         cur_path = [n]
     paths = []
     neighbors = getNeighbors(n)
-    if abs(cur_dist - target) < (SCALE_FACTOR - 1) * target and n == end:
+    if abs(cur_dist - target) <= (SCALE_FACTOR - 1) * target and n == end:
         paths.append(cur_path)
     for x in neighbors:
         d = getDist(n, x)
@@ -65,12 +46,15 @@ def TVSD(n, end, target: int, cur_path: list = [], cur_dist: float = 0):
 
 
 ###### Test operations
-given_target = 10
+target = 10
 scores = []
-for p in TVSD(0, 0, given_target):
+for p in TVSD(0, 0, target):
     d = getPathLength(p)
-    score = abs(d - given_target) / given_target
+    score = abs(d - target) / target
     scores.append((score, d, p))
 
 for y in sorted(scores):
     print(y)
+
+### Next thing to implement: scoring each edge based on non-distance
+### and adjusting score by dispreferring repeated visits to the same node

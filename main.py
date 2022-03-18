@@ -1,10 +1,8 @@
-import numpy as np
 import heapq
 
 NNODES = 4
 
-adj = np.array([[0, 1, 1, 0], [0, 0, 1, 0], [0, 0, 0, 1], [0, 0, 0, 0]])
-adj_T = np.transpose(adj)
+adj = [[0, 1, 1, 0], [0, 0, 1, 0], [0, 0, 0, 1], [0, 0, 0, 0]]
 
 
 def getNeighbors(n: int) -> list:
