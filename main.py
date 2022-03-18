@@ -11,7 +11,7 @@ def getNeighbors(n: int) -> list:
     return [i for i, x in enumerate(adj[n]) if x > 0]
 
 
-def TVSD(start, target: int = 10):
+def Dijkstra(start):
     dist = []
     prev = []
     for i in range(NNODES):
@@ -34,5 +34,3 @@ def TVSD(start, target: int = 10):
 
     return dist, prev
 
-
-print(TVSD(0))

@@ -2,8 +2,9 @@ import numpy as np
 import heapq
 
 NNODES = 4
+SCALE_FACTOR = 1.0
 
-adj = np.array([[0, 1, 1, 0], [0, 0, 1, 0], [0, 0, 0, 1], [0, 0, 0, 0]])
+adj = np.array([[0, 1, 3, 8], [1, 0, 2, 9], [0, 0, 0, 1], [0, 0, 0, 0]])
 adj_T = np.transpose(adj)
 
 
@@ -11,7 +12,7 @@ def getNeighbors(n: int) -> list:
     return [i for i, x in enumerate(adj[n]) if x > 0]
 
 
-def TVSD(start, target: int = 10):
+def Dijkstra(start):
     dist = []
     prev = []
     for i in range(NNODES):
@@ -32,7 +33,26 @@ def TVSD(start, target: int = 10):
                     dist[v] = alt
                     prev[v] = u
 
-    return dist, prev
+    return dist#, prev
 
 
-print(TVSD(0))
+def TVSD(start, end, target: int):
+    target *= SCALE_FACTOR
+    best, best_ind = float('inf'), -1
+    g_score = Dijkstra(start)
+    open_set = [start]
+    while open_set:
+        for v in open_set:
+            if g_score[v] <= target:
+                delta = target - g_score[v]
+                if delta < best:
+                    best, best_ind = delta, v
+        open_set = getNeighbors(best_ind)
+
+    return best, best_ind
+
+print(TVSD(0, 1, 10))
+
+"""
+Current status: TVSD finds a path less than target and it has nothing to do with the end node
+"""
