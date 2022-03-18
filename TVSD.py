@@ -2,14 +2,25 @@ import numpy as np
 import heapq
 
 NNODES = 4
-SCALE_FACTOR = 1.0
+SCALE_FACTOR = 1.5
 
-adj = np.array([[0, 1, 3, 8], [1, 0, 2, 9], [0, 0, 0, 1], [0, 0, 0, 0]])
+adj = np.array([[0, 1, 4, 0], [0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0]])
 adj_T = np.transpose(adj)
 
 
 def getNeighbors(n: int) -> list:
     return [i for i, x in enumerate(adj[n]) if x > 0]
+
+def getDist(u, v):
+    d = adj[u][v]
+    return d if d != 0 else float('inf')
+
+
+def getPathLength(p):
+    d = 0
+    for i in range(len(p)-1):
+        d += getDist(p[i], p[i+1])
+    return d
 
 
 def Dijkstra(start):
@@ -36,23 +47,21 @@ def Dijkstra(start):
     return dist#, prev
 
 
-def TVSD(start, end, target: int):
-    target *= SCALE_FACTOR
-    best, best_ind = float('inf'), -1
-    g_score = Dijkstra(start)
-    open_set = [start]
-    while open_set:
-        for v in open_set:
-            if g_score[v] <= target:
-                delta = target - g_score[v]
-                if delta < best:
-                    best, best_ind = delta, v
-        open_set = getNeighbors(best_ind)
+def TVSD(n, end, target: int, cur_path: list = [], cur_dist: int = 0):
+    if not cur_path:
+        cur_path = [n]
+    paths = []
+    neighbors = getNeighbors(n)
+    if abs(cur_dist - target) < (SCALE_FACTOR-1) * target and n == end:
+        paths.append(cur_path)
+    for x in neighbors:
+        d = getDist(n, x)
+        if d + cur_dist <= SCALE_FACTOR * target:
+            p = TVSD(x, end, target, cur_path + [x], d + cur_dist)
+            if p:
+                paths += p
 
-    return best, best_ind
+    return paths if paths else None
 
-print(TVSD(0, 1, 10))
-
-"""
-Current status: TVSD finds a path less than target and it has nothing to do with the end node
-"""
+for x in TVSD(0,1,10):
+    print(getPathLength(x), ": ", x)
