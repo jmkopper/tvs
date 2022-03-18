@@ -1,15 +1,15 @@
-import numpy as np
+#import numpy as np
 import heapq
 
 NNODES = 4
-SCALE_FACTOR = 1.5
+SCALE_FACTOR = 1.25
 
-adj = np.array([[0, 1, 4, 0], [0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 0, 0]])
-adj_T = np.transpose(adj)
+adj = [[0, 6, 3.2, 0], [6, 0, 2.5, 2.5], [3.2, 2.5, 0, 2.2], [0, 2.5, 2.2, 0]]
 
 
 def getNeighbors(n: int) -> list:
     return [i for i, x in enumerate(adj[n]) if x > 0]
+
 
 def getDist(u, v):
     d = adj[u][v]
@@ -18,8 +18,8 @@ def getDist(u, v):
 
 def getPathLength(p):
     d = 0
-    for i in range(len(p)-1):
-        d += getDist(p[i], p[i+1])
+    for i in range(len(p) - 1):
+        d += getDist(p[i], p[i + 1])
     return d
 
 
@@ -44,15 +44,15 @@ def Dijkstra(start):
                     dist[v] = alt
                     prev[v] = u
 
-    return dist#, prev
+    return dist  # , prev
 
 
-def TVSD(n, end, target: int, cur_path: list = [], cur_dist: int = 0):
+def TVSD(n, end, target: int, cur_path: list = [], cur_dist: float = 0):
     if not cur_path:
         cur_path = [n]
     paths = []
     neighbors = getNeighbors(n)
-    if abs(cur_dist - target) < (SCALE_FACTOR-1) * target and n == end:
+    if abs(cur_dist - target) < (SCALE_FACTOR - 1) * target and n == end:
         paths.append(cur_path)
     for x in neighbors:
         d = getDist(n, x)
@@ -63,5 +63,14 @@ def TVSD(n, end, target: int, cur_path: list = [], cur_dist: int = 0):
 
     return paths if paths else None
 
-for x in TVSD(0,1,10):
-    print(getPathLength(x), ": ", x)
+
+###### Test operations
+given_target = 10
+scores = []
+for p in TVSD(0, 0, given_target):
+    d = getPathLength(p)
+    score = abs(d - given_target) / given_target
+    scores.append((score, d, p))
+
+for y in sorted(scores):
+    print(y)
