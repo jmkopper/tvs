@@ -1,7 +1,9 @@
 from collections import Counter
+import heapq
 
-NNODES = 4
+NNODES = 10
 SCALE_FACTOR = 1.1
+MAX_REDUNDANCY = 3
 
 """
 NNODES is the number of nodes in the graph
@@ -10,13 +12,46 @@ corresponds to x%. For example, if SCALE_FACTOR = 1.5 and target distance is 10,
 with distance between 5 and 15 (inclusive.)
 """
 
-adj = [[0, 6, 3.2, 0], [6, 0, 2.5, 2.5], [3.2, 2.5, 0, 2.2], [0, 2.5, 2.2, 0]]
-eng = [[0, 1, 1, 0], [1, 0, 1, 1], [1, 1, 0, 1], [0, 1, 1, 0]]
+# Galbraith gap data
+# adj = [[0, 6, 3.2, 0], [6, 0, 2.5, 2.5], [3.2, 2.5, 0, 2.2], [0, 2.5, 2.2, 0]]
+# eng = [[0, 0.05, 0.03, 0], [0, 0, 0, 0], [0, 0.04, 0, 0.03], [0, 0, 0.04, 0]]
+
+adj = [[0, 1.7, 0, 0.25, 0, 0, 0, 0, 2.7, 0],
+       [1.7, 0, 1.5, 0, 0, 0, 0, 0, 0, 1],
+       [0, 1.5, 0, 1.1, 0, 0, 0, 0, 0, 1.2],
+       [0.25, 0, 1.1, 0, 0.75, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0.75, 0, 2.7, 0, 0, 0, 0],
+       [0, 0, 0, 0, 2.7, 0, 5.6, 0, 0, 0],
+       [0, 0, 0, 0, 0, 5.6, 0, 0.8, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0.8, 0, 2.7, 0],
+       [2.7, 0, 0, 0, 0, 0, 0, 2.7, 0, 0],
+       [0, 1, 1.2, 0, 0, 0, 0, 0, 0, 0]
+       ]
+
+eng = [[0, 0, 0, 0, 0, 0, 0, 0, 0.03, 0],
+       [0, 0, 0.02, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0.03, 0, 0.01, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0.06, 0, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0.02, 0],
+       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+       [0, 0.04, 0.05, 0, 0, 0, 0, 0, 0, 0]
+       ]
 
 if len(adj) != NNODES:
     print('WARNING: adjacency matrix has length ', len(adj), ' but ', NNODES, 'nodes were expected.')
 if len(eng) != NNODES:
     print('WARNING: energy matrix has length ', len(eng), ' but ', NNODES, 'nodes were expected.')
+
+for l in adj:
+    if len(l) != NNODES:
+        print('WARNING: adj matrix row ', l, ' has length ', len(l))
+
+for l in eng:
+    if len(l) != NNODES:
+        print('WARNING: eng matrix row ', l, ' has length ', len(l))
 
 
 def getNeighbors(n: int) -> list:
@@ -35,50 +70,55 @@ def getEnergy(u: int, v: int):
 def getPathScores(path: list) -> tuple[float, float, int]:
     distance, energy, redundancy = 0, 0, 0
     for i in range(len(path) - 1):
-        distance += getDist(p[i], p[i + 1])
-        energy += getEnergy(p[i], p[i + 1])
+        distance += getDist(path[i], path[i + 1])
+        energy += getEnergy(path[i], path[i + 1]) * distance
     c = Counter(path)
     for x in c:
         redundancy += c[x] - 1
     return distance, energy, redundancy
 
 
-def totalScore(path: list, target_d: float, target_e: float) -> float:
+def totalScore(path: list, target_d: float) -> float:
     d, e, r = getPathScores(path)
-    return r*(d / target_d + e / target_e)
+    return (5 * r / NNODES) * (d / target_d) * (1 + e)
 
 
 # Main algorithm: Target Value Search D(FS)
 def TVSD(n: int, end: int, target_dist: float, cur_path: list = [], cur_dist: float = 0):
+    path_heap = []
     if not cur_path:
         cur_path = [n]
-    paths = []
-    neighbors = getNeighbors(n)
+    # paths = []
     if abs(cur_dist - target_dist) <= (SCALE_FACTOR - 1) * target_dist and n == end:
-        paths.append(cur_path)
+        path_heap = [(totalScore(cur_path, target_dist), cur_path, *getPathScores(cur_path))]
+    # paths = cur_path
+    neighbors = getNeighbors(n)
     for x in neighbors:
         d = getDist(n, x)
-        if d + cur_dist <= SCALE_FACTOR * target_dist:
+        if d + cur_dist <= SCALE_FACTOR * target_dist and cur_path.count(x) < MAX_REDUNDANCY:
             p = TVSD(x, end, target_dist, cur_path + [x], d + cur_dist)
             if p:
-                paths += p
-
-    return paths if paths else None
+                path_heap = list(heapq.merge(p, path_heap))
+            # paths += p
+    return path_heap if path_heap else None
 
 
 ###### Test operations
-target = 20
-target_energy = 8
-scores = []
-for p in TVSD(0, 0, target):
-    d, e, r = getPathScores(p)
-    t = totalScore(p, target, target_energy)
-    dscore = abs(d - target) / target
-    escore = abs(e - target_energy) / target_energy
-    scores.append((round(t, 2), round(dscore, 2), round(escore, 2), round(d, 2), p, r))
+target = 15
+heap = TVSD(0, 0, target)
 
-for y in sorted(scores):
-    print(y)
+for i in range(5):
+    print(heap.pop())
+# scores = []
+# for p in TVSD(0, 0, target):
+#     d, e, r = getPathScores(p)
+#     t = totalScore(p, target)
+#     dscore = abs(d - target) / target
+#     heapq.heappush(scores, (round(t, 2), round(dscore, 2), round(d, 2), p, r))
+#     # scores.append((round(t, 2), round(dscore, 2), round(d, 2), p, r))
+
+# for i in range(5):
+#     print(heapq.heappop(scores))
 
 ### Next thing to implement: target energy should be optional
 ### Also want weights for target energy, target dist, redundancy.
