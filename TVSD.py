@@ -21,8 +21,8 @@ adj = [[0, 1.7, 0, 0.25, 0, 0, 0, 0, 2.7, 0],
        [0, 1.5, 0, 1.1, 0, 0, 0, 0, 0, 1.2],
        [0.25, 0, 1.1, 0, 0.75, 0, 0, 0, 0, 0],
        [0, 0, 0, 0.75, 0, 2.7, 0, 0, 0, 0],
-       [0, 0, 0, 0, 2.7, 0, 5.6, 0, 0, 0],
-       [0, 0, 0, 0, 0, 5.6, 0, 0.8, 0, 0],
+       [0, 0, 0, 0, 2.7, 0, 3.7, 0, 0, 0],
+       [0, 0, 0, 0, 0, 3.7, 0, 0.8, 0, 0],
        [0, 0, 0, 0, 0, 0, 0.8, 0, 2.7, 0],
        [2.7, 0, 0, 0, 0, 0, 0, 2.7, 0, 0],
        [0, 1, 1.2, 0, 0, 0, 0, 0, 0, 0]
@@ -80,7 +80,7 @@ def getPathScores(path: list) -> tuple[float, float, int]:
 
 def totalScore(path: list, target_d: float) -> float:
     d, e, r = getPathScores(path)
-    return (5 * r / NNODES) * (d / target_d) * (1 + e)
+    return (2 * r / NNODES) * (d / target_d) * (1 + e)
 
 
 # Main algorithm: Target Value Search D(FS)
@@ -88,37 +88,24 @@ def TVSD(n: int, end: int, target_dist: float, cur_path: list = [], cur_dist: fl
     path_heap = []
     if not cur_path:
         cur_path = [n]
-    # paths = []
     if abs(cur_dist - target_dist) <= (SCALE_FACTOR - 1) * target_dist and n == end:
         path_heap = [(totalScore(cur_path, target_dist), cur_path, *getPathScores(cur_path))]
-    # paths = cur_path
     neighbors = getNeighbors(n)
     for x in neighbors:
         d = getDist(n, x)
         if d + cur_dist <= SCALE_FACTOR * target_dist and cur_path.count(x) < MAX_REDUNDANCY:
             p = TVSD(x, end, target_dist, cur_path + [x], d + cur_dist)
             if p:
-                path_heap = list(heapq.merge(p, path_heap))
-            # paths += p
+                path_heap = list(heapq.merge(p, path_heap, key=lambda x: x[0]))
     return path_heap if path_heap else None
 
 
 ###### Test operations
-target = 15
+target = 17
 heap = TVSD(0, 0, target)
 
 for i in range(5):
-    print(heap.pop())
-# scores = []
-# for p in TVSD(0, 0, target):
-#     d, e, r = getPathScores(p)
-#     t = totalScore(p, target)
-#     dscore = abs(d - target) / target
-#     heapq.heappush(scores, (round(t, 2), round(dscore, 2), round(d, 2), p, r))
-#     # scores.append((round(t, 2), round(dscore, 2), round(d, 2), p, r))
-
-# for i in range(5):
-#     print(heapq.heappop(scores))
+    print(heapq.heappop(heap))
 
 ### Next thing to implement: target energy should be optional
 ### Also want weights for target energy, target dist, redundancy.
