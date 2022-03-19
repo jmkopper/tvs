@@ -10,6 +10,8 @@ NNODES is the number of nodes in the graph
 SCALE_FACTOR is the amount by which the algorithm will allow itself to miss the target distance. A value of 1.x
 corresponds to x%. For example, if SCALE_FACTOR = 1.5 and target distance is 10, the algorithm will find routes
 with distance between 5 and 15 (inclusive.)
+MAX_REDUNDANCY is the maximum number of times the algorithm will visit a given node. Anything more than 4 will set my
+computer on fire and is so dispreffered by the scoring algorithm that it's probably useless anyway.
 """
 
 # Galbraith gap data
@@ -45,54 +47,54 @@ if len(adj) != NNODES:
 if len(eng) != NNODES:
     print('WARNING: energy matrix has length ', len(eng), ' but ', NNODES, 'nodes were expected.')
 
-for l in adj:
-    if len(l) != NNODES:
-        print('WARNING: adj matrix row ', l, ' has length ', len(l))
+for n in adj:
+    if len(n) != NNODES:
+        print('WARNING: adj matrix row ', n, ' has length ', len(n))
 
-for l in eng:
-    if len(l) != NNODES:
-        print('WARNING: eng matrix row ', l, ' has length ', len(l))
+for n in eng:
+    if len(n) != NNODES:
+        print('WARNING: eng matrix row ', n, ' has length ', len(n))
 
 
-def getNeighbors(n: int) -> list:
+def get_neighbors(n: int) -> list:
     return [i for i, x in enumerate(adj[n]) if x > 0]
 
 
-def getDist(u: int, v: int) -> float:
+def get_dist(u: int, v: int) -> float:
     d = adj[u][v]
     return d if d != 0 else float('inf')
 
 
-def getEnergy(u: int, v: int):
+def get_energy(u: int, v: int):
     return eng[u][v]
 
 
-def getPathScores(path: list) -> tuple[float, float, int]:
+def get_path_scores(path: list) -> tuple[float, float, int]:
     distance, energy, redundancy = 0, 0, 0
     for i in range(len(path) - 1):
-        distance += getDist(path[i], path[i + 1])
-        energy += getEnergy(path[i], path[i + 1]) * distance
+        distance += get_dist(path[i], path[i + 1])
+        energy += get_energy(path[i], path[i + 1]) * distance
     c = Counter(path)
     for x in c:
         redundancy += c[x] - 1
     return distance, energy, redundancy
 
 
-def totalScore(path: list, target_d: float) -> float:
-    d, e, r = getPathScores(path)
-    return (2 * r / NNODES) * (d / target_d) * (1 + e)
+def total_score(path: list, target_d: float) -> float:
+    d, e, r = get_path_scores(path)
+    return (r ** 2) * (d / target_d) * (1 + e)
 
 
 # Main algorithm: Target Value Search D(FS)
-def TVSD(n: int, end: int, target_dist: float, cur_path: list = [], cur_dist: float = 0):
+def TVSD(n: int, end: int, target_dist: float, cur_path: list = None, cur_dist: float = 0):
     path_heap = []
     if not cur_path:
         cur_path = [n]
     if abs(cur_dist - target_dist) <= (SCALE_FACTOR - 1) * target_dist and n == end:
-        path_heap = [(totalScore(cur_path, target_dist), cur_path, *getPathScores(cur_path))]
-    neighbors = getNeighbors(n)
+        path_heap = [(total_score(cur_path, target_dist), cur_path, *get_path_scores(cur_path))]
+    neighbors = get_neighbors(n)
     for x in neighbors:
-        d = getDist(n, x)
+        d = get_dist(n, x)
         if d + cur_dist <= SCALE_FACTOR * target_dist and cur_path.count(x) < MAX_REDUNDANCY:
             p = TVSD(x, end, target_dist, cur_path + [x], d + cur_dist)
             if p:
@@ -100,13 +102,14 @@ def TVSD(n: int, end: int, target_dist: float, cur_path: list = [], cur_dist: fl
     return path_heap if path_heap else None
 
 
-###### Test operations
+# Test operations
 target = 17
 heap = TVSD(0, 0, target)
 
 for i in range(5):
     print(heapq.heappop(heap))
 
-### Next thing to implement: target energy should be optional
-### Also want weights for target energy, target dist, redundancy.
-### Also reconsider the formula score = redun * (%error dist + %error energy)
+# Next thing to implement: target energy should be optional
+# Also want weights for target energy, target dist, redundancy.
+# Also reconsider the formula score = redun * (%error dist + %error energy)
+# Maybe exclude something from the heap if it's already outside the top 10 or so
