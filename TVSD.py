@@ -102,14 +102,9 @@ def TVSD(n: int, end: int, target_dist: float, cur_path: list = None, cur_dist: 
     return path_heap if path_heap else None
 
 
-# Test operations
+# Sample operations
 target = 17
 heap = TVSD(0, 0, target)
 
 for i in range(5):
     print(heapq.heappop(heap))
-
-# Next thing to implement: target energy should be optional
-# Also want weights for target energy, target dist, redundancy.
-# Also reconsider the formula score = redun * (%error dist + %error energy)
-# Maybe exclude something from the heap if it's already outside the top 10 or so
