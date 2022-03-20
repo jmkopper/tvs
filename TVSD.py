@@ -65,7 +65,7 @@ def get_dist(u: int, v: int) -> float:
     return d if d != 0 else float('inf')
 
 
-def get_energy(u: int, v: int):
+def get_energy(u: int, v: int) -> float:
     return eng[u][v]
 
 
