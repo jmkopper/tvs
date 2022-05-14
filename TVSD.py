@@ -14,7 +14,7 @@ SCALE_FACTOR = 1.1
 MAX_REDUNDANCY = 3
 
 BASE_PATH = './'
-IMPORT_FILE_NAME = 'dutch_alvin.json'
+IMPORT_FILE_NAME = 'sample.json'
 EXPORT_FILE_NAME = 'output.json'
 
 # Load from the json file
